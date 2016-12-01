@@ -25,9 +25,3 @@ register_activation_hook( __FILE__, array( 'Promosystem', 'plugin_activation' ) 
 register_deactivation_hook( __FILE__, array( 'Promosystem', 'plugin_deactivation' ) );
 
 add_action( 'init', array( 'Promosystem', 'init' ) );
-
-if (isset($_POST['code']) ){
-    print_r($_POST);
-    do_action( 'ps_code_check', $_POST );
-    
-}

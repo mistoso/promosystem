@@ -3,7 +3,7 @@
 class Promosystem {
     
     const API_HOST = 'promo-system.com';
-	const API_PORT = 80;
+	const API_PORT = 81;
     const API_KEY = '';
     
     private static $initiated = false;
@@ -19,31 +19,62 @@ class Promosystem {
         
 		add_action( 'wp_enqueue_scripts', array( 'Promosystem', 'load_form_js' ) );
 		add_action( 'plugins_loaded', array( 'Promosystem', 'inject_ak_js' ) );
-		add_action( 'ps_code_check', array( 'Promosystem', 'code_check' ), 10, 1 );
-        
-        Promosystem::log( 'init_huuks' );
+		add_action( 'wp_ajax_ps_code_check', array( 'Promosystem', 'code_check' ) );
+		add_action( 'wp_ajax_nopriv_ps_code_check', array( 'Promosystem', 'code_check' ) );
+		add_action( 'ps_request_failure', array( 'Promosystem', 'request_failure'));
+
     }
     
-    public static function code_check($args){
-        $res = self::http_post( self::build_query( $args ), '/ru/code/validater');
-        Promosystem::log( print_r( $res, true ) );
+    public static function code_check(){
+		unset( $_POST['action']);
+		$body = array(
+			'code'	=>	$_POST['code'],
+			'lang'	=>	'ru',
+			'token'	=> 'Jgq2vSca1dKOuv4OYbv4u2mZBdsbRU4VyPAwOc3DIvl7iMhq11jepijAGs9zxgxLsoP1bieEjfODLCP2fuVxxtBAgfqqq9aLLQEV5kEVgtKwo1qUbYveVLww1847ciy3'
+		);
+       // $res = Promosystem::http_post(  $body , 'ru/api/ps/code');
+		$res = Promosystem::curl( 'ru/api/ps/code', $body);
+		$my_res = json_encode(json_decode( $res, true )) ;
+		//Promosystem::log( $res, ' возврат апи: ');
+		echo $res;
+		exit;
+		
     }
-    
+	
+    public static function curl($url, $fields = array()) {
+		$url = 'http://' . self::API_HOST . "/" . $url;
+		header('Content-type: text/plain; charset=utf-8');
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_POST, count($fields));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		$result = curl_exec($ch);
+		
+		$info = curl_getinfo($ch);
+		
+		curl_close($ch);
+		
+		Promosystem::log( compact('result','info'), 'curl: ');
+
+		return $result;
+	}
+	
     public static function build_query( $args ) {
 		return _http_build_query( $args, '', '&' );
 	}
     
 	public static function load_form_js() {
-		Promosystem::log('load_form_js');
 		wp_register_script( 'promosystem-form', PS_URL . 'assets/js/promosystem-form.js', array(), '0.1', true );
 		add_action( 'wp_footer', array( 'Promosystem', 'print_form_js' ) );
 		
 	}
 	
 	public static function print_form_js() {
-		//Promosystem::load_form_js();
-		//wp_print_scripts( 'promosystem-form' );
+		
 		wp_enqueue_script('promosystem-form' );
+		wp_localize_script( 'promosystem-form', 'ajax_object', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 		
 	}
     
@@ -68,107 +99,49 @@ class Promosystem {
     
     public static function http_post( $request, $path, $ip=null ) {
 
-		$promosystem_ua = sprintf( 'WordPress/%s | Promosystem/%s', $GLOBALS['wp_version'], constant( '0.1' ) );
+		$promosystem_ua = sprintf( 'WordPress/%s | Promosystem/%s', $GLOBALS['wp_version'], PS_VERSION );
 		$promosystem_ua = apply_filters( 'promosystem_ua', $promosystem_ua );
-
-		$content_length = strlen( $request );
-
+		//$content_length = strlen( $request );
 		$api_key   = self::API_KEY;
 		$host      = self::API_HOST;
 
-		if ( !empty( $api_key ) )
-			$host = $api_key.'.'.$host;
-
-		$http_host = $host;
-		
-		if ( $ip && long2ip( ip2long( $ip ) ) ) {
-			$http_host = $ip;
-		}
+		if ( $ip && long2ip( ip2long( $ip ) ) ) { $host = $ip; }
 
 		$http_args = array(
-			'body' => $request,
-			'headers' => array(
-				'Content-Type' => 'application/x-www-form-urlencoded; charset=' . get_option( 'blog_charset' ),
-				'Host' => $host,
-				'User-Agent' => $promosystem_ua,
+			'body'		=>	$request,
+			'headers'	=>	array(
+				'Content-Type'	=>	'text/plain; charset=' . get_option( 'blog_charset' ),
+				'Host'	=>	$host,
+				'User-Agent'	=>	$promosystem_ua,
 			),
-			'httpversion' => '1.0',
-			'timeout' => 15
+			'httpversion'	=>	'1.0',
+			'timeout'	=>	15,
+			'method'	=>	'POST',
 		);
 
-		$promosystem_url = $http_promosystem_url = "http://{$http_host}/{$path}";
-
-		/**
-		 * Try SSL first; if that fails, try without it and don't try it again for a while.
-		 */
-
-		$ssl = $ssl_failed = false;
-
-		// Check if SSL requests were disabled fewer than X hours ago.
-		$ssl_disabled = get_option( 'promosystem_ssl_disabled' );
-
-		if ( $ssl_disabled && $ssl_disabled < ( time() - 60 * 60 * 24 ) ) { // 24 hours
-			$ssl_disabled = false;
-			delete_option( 'promosystem_ssl_disabled' );
-		}
-		else if ( $ssl_disabled ) {
-			do_action( 'promosystem_ssl_disabled' );
-		}
-
-		if ( ! $ssl_disabled && function_exists( 'wp_http_supports') && ( $ssl = wp_http_supports( array( 'ssl' ) ) ) ) {
-			$promosystem_url = set_url_scheme( $promosystem_url, 'https' );
-
-			do_action( 'promosystem_https_request_pre' );
-		}
+		$promosystem_url = "http://{$host}/{$path}";
 
 		$response = wp_remote_post( $promosystem_url, $http_args );
 
-		Promosystem::log( compact( 'promosystem_url', 'http_args', 'response' ) );
+		Promosystem::log( $http_args , ' возврат апи: ');
 
-		if ( $ssl && is_wp_error( $response ) ) {
-			do_action( 'promosystem_https_request_failure', $response );
+		//if ( is_wp_error( $response ) ) {
+			//do_action( 'ps_request_failure', $response );
 
-			// Intermittent connection problems may cause the first HTTPS
-			// request to fail and subsequent HTTP requests to succeed randomly.
-			// Retry the HTTPS request once before disabling SSL for a time.
-			$response = wp_remote_post( $promosystem_url, $http_args );
-			
-			Promosystem::log( compact( 'promosystem_url', 'http_args', 'response' ) );
+		//}
 
-			if ( is_wp_error( $response ) ) {
-				$ssl_failed = true;
-
-				do_action( 'promosystem_https_request_failure', $response );
-
-				do_action( 'promosystem_http_request_pre' );
-
-				// Try the request again without SSL.
-				$response = wp_remote_post( $http_promosystem_url, $http_args );
-
-				Promosystem::log( compact( 'http_promosystem_url', 'http_args', 'response' ) );
-			}
-		}
-
-		if ( is_wp_error( $response ) ) {
-			do_action( 'promosystem_request_failure', $response );
-
-			return array( '', '' );
-		}
-
-		if ( $ssl_failed ) {
-			// The request failed when using SSL but succeeded without it. Disable SSL for future requests.
-			update_option( 'promosystem_ssl_disabled', time() );
-			
-			do_action( 'promosystem_https_disabled' );
-		}
+		$response = $response['body'];
 		
-		$simplified_response = array( $response['headers'], $response['body'] );
-		
-		self::update_alert( $simplified_response );
+//		Promosystem::update_alert( $simplified_response );
 
-		return $simplified_response;
+		return $response;
 	}
     
+	public static function request_failure ( $response ){
+		$error_message = $response->get_error_message();
+		Promosystem::log( "Что-то пошло не так: $error_message", 'после возврата ' );	
+	}
+	
     private static function update_alert( $response ) {
 		$code = $msg = null;
 		if ( isset( $response[0]['x-ps-alert-code'] ) ) {
@@ -199,9 +172,9 @@ class Promosystem {
 		}
 	}
     
-    public static function log( $promosystem_debug ) {
+    public static function log( $promosystem_debug , $caption = 'Debug : ') {
 		if ( apply_filters( 'promosystem_debug_log', defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
-			error_log( print_r( compact( 'promosystem_debug' ), true ) );
+			error_log( $caption . "  " . print_r( compact( 'promosystem_debug' ), true ) );
 		}
 	}
     

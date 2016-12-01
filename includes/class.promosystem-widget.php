@@ -23,8 +23,11 @@ class Promosystem_Widget extends WP_Widget {
 				width: auto;
 				display: block;
 				font-weight: normal;
-				color: #FFF;
+				color: inherit;
 				white-space: nowrap;
+			}
+			.a-stats .check_result {
+				display: none;
 			}
 		</style>
 		<?php
@@ -47,8 +50,11 @@ class Promosystem_Widget extends WP_Widget {
 		?>
 		
 			<div class="a-st">
-				<form class="a-stats" method="post" action="http://promo-system.com/ru/code/validater" id="ps_check_form">
-					<input type="text" id="code" name="code" placeholder="xxx-xxx-xxx"><input type="submit" value="Проверить" id="check_button">
+				<form class="a-stats" method="post" action="" id="ps_check_form">
+					<input type="hidden" name="action" value="ps_code_check">
+					<input type="text" id="code" name="code" value="EYCN3VWKK" >
+					<input type="submit" value="Проверить" id="check_button">
+					<div class="check_result"></div>
 				</form>
 			</div>
 		<?php

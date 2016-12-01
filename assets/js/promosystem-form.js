@@ -16,34 +16,29 @@ jQuery( function ( $ ) {
 	
 	$( '#ps_check_form' ).on( 'click', '#check_button', function () {
 		var ps_form = $( '#ps_check_form' ).serialize();
-        console.log( ps_form );
-        console.log( ajax_object.ajax_url );
-		return false;
+        
 		$.ajax({
-			url: ajax_object.ajaxurl, //'/wp-content/plugins/promosystem/promosystem.php',
+			url: ajax_object.ajaxurl,
 			type: 'POST',
 			data: ps_form,
+			dataType: 'json',
 			beforeSend: function () {
-                console.log('send, waiting . . . ')},
-			success: function (response) {
-                console.log(response);
-                return false;
-			/*	if (response) {
-					// Show status/undo link
-					$("#author_comment_url_"+ thisId)
-						.attr('cid', thisId)
-						.addClass('akismet_undo_link_removal')
-						.html(
-							$( '<span/>' ).text( WPAkismet.strings['URL removed'] )
-						)
-						.append( ' ' )
-						.append(
-							$( '<span/>' )
-								.text( WPAkismet.strings['(undo)'] )
-								.addClass( 'akismet-span-link' )
-						);
-				}
-				*/
+                console.log('send, waiting . . . ');
+				// zagryzka	
+			},
+			success: function (response, status) {
+				console.log(response);
+				if (response.status == 'valid') {
+                    alert(response.product.title);
+                }
+				var mes = response.message;
+                     $( '#ps_check_form .check_result')
+					 .html(	$('<span class=main_result> </span>').text( mes[0] ) )
+					 .append( '<br>' )
+					 .append( mes[1] )
+					.show();
+				
+			
 			}
 		});
 
