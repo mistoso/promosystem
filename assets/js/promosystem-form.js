@@ -23,19 +23,23 @@ jQuery( function ( $ ) {
 			data: ps_form,
 			dataType: 'json',
 			beforeSend: function () {
-                console.log('send, waiting . . . ');
+                $( '#ps_check_form .check_result').hide().empty();
+                $( '#ps_check_form .check_loading').show();
 				// zagryzka	
 			},
 			success: function (response, status) {
 				console.log(response);
-				if (response.status == 'valid') {
-                    alert(response.product.title);
-                }
+                $( '#ps_check_form .check_loading').hide();
+				//if (response.status == 'valid') {
+                  //  alert(response.product.title)
+                //}
 				var mes = response.message;
+                var prod = response.product;
                      $( '#ps_check_form .check_result')
 					 .html(	$('<span class=main_result> </span>').text( mes[0] ) )
 					 .append( '<br>' )
-					 .append( mes[1] )
+					 .append( mes[1] ).append( '<br>' )
+                    .append( prod.title )
 					.show();
 				
 			

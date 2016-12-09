@@ -24,23 +24,23 @@ class Promosystem_Widget extends WP_Widget {
 				display: block;
 				font-weight: normal;
 				color: inherit;
-				white-space: nowrap;
 			}
-			.a-stats .check_result {
+			.a-stats .check_result, a-stats .check_loading {
 				display: none;
 			}
+			.a-st {max-width: 200px;}
 		</style>
 		<?php
 	}
     
     function widget( $args, $instance ) {
-		$count = get_option( 'akismet_spam_count' );
 
 		if ( ! isset( $instance['title'] ) ) {
 			$instance['title'] = 'Проверка кода';
 		}
 
 		echo $args['before_widget'];
+		
 		if ( ! empty( $instance['title'] ) ) {
 			echo $args['before_title'];
 			echo esc_html( $instance['title'] );
@@ -51,10 +51,13 @@ class Promosystem_Widget extends WP_Widget {
 		
 			<div class="a-st">
 				<form class="a-stats" method="post" action="" id="ps_check_form">
+				    <div class="check_result"></div>
 					<input type="hidden" name="action" value="ps_code_check">
-					<input type="text" id="code" name="code" value="EYCN3VWKK" >
+					<input type="text" id="code" name="code" value="EYCN3VWKK" placeholder="код">
+					<input type="text" id="ps_phone" name="ps_phone" value="+380678903876" placeholder="тел">
+					<input type="text" id="ps_name" name="ps_name" placeholder="имя" value="misha">
 					<input type="submit" value="Проверить" id="check_button">
-					<div class="check_result"></div>
+					<div class="check_loading" style="display:none;">Зачекайте</div>
 				</form>
 			</div>
 		<?php

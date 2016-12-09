@@ -29,6 +29,8 @@ class Promosystem {
 		unset( $_POST['action']);
 		$body = array(
 			'code'	=>	$_POST['code'],
+			'phone'	=> $_POST['ps_phone'],
+			'name'	=> $_POST['ps_name'],
 			'lang'	=>	'ru',
 			'token'	=> 'Jgq2vSca1dKOuv4OYbv4u2mZBdsbRU4VyPAwOc3DIvl7iMhq11jepijAGs9zxgxLsoP1bieEjfODLCP2fuVxxtBAgfqqq9aLLQEV5kEVgtKwo1qUbYveVLww1847ciy3'
 		);
