@@ -30,18 +30,18 @@ jQuery( function ( $ ) {
 			success: function (response, status) {
 				console.log(response);
                 $( '#ps_check_form .check_loading').hide();
-				//if (response.status == 'valid') {
-                  //  alert(response.product.title)
-                //}
+				
 				var mes = response.message;
-                var prod = response.product;
+                
                      $( '#ps_check_form .check_result')
 					 .html(	$('<span class=main_result> </span>').text( mes[0] ) )
 					 .append( '<br>' )
-					 .append( mes[1] ).append( '<br>' )
-                    .append( prod.title )
+					 .append( mes[1] )
 					.show();
-				
+				if (response.status == 'valid' || response.status == 'already') {
+                    var prod = response.product;
+                    $( '#ps_check_form .check_result').append( '<br>' ).append(prod.title);
+                }
 			
 			}
 		});

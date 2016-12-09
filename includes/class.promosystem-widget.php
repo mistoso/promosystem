@@ -53,9 +53,9 @@ class Promosystem_Widget extends WP_Widget {
 				<form class="a-stats" method="post" action="" id="ps_check_form">
 				    <div class="check_result"></div>
 					<input type="hidden" name="action" value="ps_code_check">
-					<input type="text" id="code" name="code" value="EYCN3VWKK" placeholder="код">
-					<input type="text" id="ps_phone" name="ps_phone" value="+380678903876" placeholder="тел">
-					<input type="text" id="ps_name" name="ps_name" placeholder="имя" value="misha">
+					<input type="text" id="code" name="code" placeholder="код">
+					<input type="text" id="ps_phone" name="ps_phone" placeholder="тел">
+					<input type="text" id="ps_name" name="ps_name" placeholder="имя" >
 					<input type="submit" value="Проверить" id="check_button">
 					<div class="check_loading" style="display:none;">Зачекайте</div>
 				</form>
